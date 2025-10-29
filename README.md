@@ -330,3 +330,5 @@ project_root/
 ├── run.sh                     # Main bash script for CLI operations
 └── README.md                  # Project documentation and instructions
 ```
+## Contact
+phuc.dangcs2007@hcmut.edu.vn
