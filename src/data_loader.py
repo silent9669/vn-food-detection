@@ -11,15 +11,23 @@ class FoodDataset(Dataset):
         self.data_dir = data_dir
         self.labels_df = pd.read_csv(csv_file)
         self.transform = transform
-        self.class_to_idx = {class_name: i for i, class_name in enumerate(self.labels_df['class_name'].unique())}
+        # Map class names to integers
+        self.classes = sorted(self.labels_df['class_name'].unique().tolist())
+        self.class_to_idx = {class_name: i for i, class_name in enumerate(self.classes)}
+        self.idx_to_class = {i: class_name for i, class_name in enumerate(self.classes)}
 
     def __len__(self):
         return len(self.labels_df)
 
     def __getitem__(self, idx):
-        img_path = os.path.join(self.data_dir, self.labels_df.iloc[idx, 0])
+        # Assuming csv_file has columns: 'image_id', 'class_name'
+        # And images are organized as data_dir/class_name/image_id
+        image_path_in_csv = self.labels_df.iloc[idx]['image_path']
+        label_name = self.labels_df.iloc[idx]['class_name']
+        
+        img_path = os.path.join(self.data_dir, image_path_in_csv)
+        
         image = Image.open(img_path).convert("RGB")
-        label_name = self.labels_df.iloc[idx, 1]
         label = self.class_to_idx[label_name]
 
         if self.transform:
@@ -46,7 +54,7 @@ def get_val_transforms(): # New function for validation transforms
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
-def get_data_loaders(data_dir, csv_file, batch_size=32, validation_split=0.2, shuffle=True, limit_data=None):
+def get_data_loaders(data_dir, csv_file, batch_size=32, validation_split=0.2, shuffle=True, num_workers=0, pin_memory=False, limit_data=None):
     # Use different transforms for training and validation datasets
     train_transform = get_train_transforms()
     val_transform = get_val_transforms()
@@ -81,7 +89,7 @@ def get_data_loaders(data_dir, csv_file, batch_size=32, validation_split=0.2, sh
     train_subset = torch.utils.data.Subset(train_dataset, train_indices)
     val_subset = torch.utils.data.Subset(val_dataset, val_indices)
 
-    train_loader = torch.utils.data.DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, num_workers=os.cpu_count() // 2 if os.cpu_count() else 0)
-    val_loader = torch.utils.data.DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=os.cpu_count() // 2 if os.cpu_count() else 0) # No need to shuffle validation data
+    train_loader = torch.utils.data.DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=pin_memory)
+    val_loader = torch.utils.data.DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
 
     return train_loader, val_loader
