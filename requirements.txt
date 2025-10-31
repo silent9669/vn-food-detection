@@ -11,3 +11,4 @@ tqdm>=4.65.0
 PyYAML>=6.0
 opencv-python>=4.7.0
 numpy>=1.23.0
+requests>=2.28.0

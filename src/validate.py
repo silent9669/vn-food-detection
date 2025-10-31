@@ -1,4 +1,5 @@
 import os
+import sys
 import streamlit as st
 from PIL import Image
 import torch
@@ -7,6 +8,9 @@ import argparse
 import tempfile
 import requests
 from io import BytesIO
+
+# Add parent directory to path for imports to work in Streamlit Cloud
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.model import get_model
 from src.utils import load_model

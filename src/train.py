@@ -1,4 +1,5 @@
 import os
+import sys
 import streamlit as st
 import pandas as pd
 import torch
@@ -7,6 +8,9 @@ import torch.optim as optim
 from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import argparse
+
+# Add parent directory to path for imports to work in Streamlit Cloud
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.data_loader import get_data_loaders
 from src.model import get_model

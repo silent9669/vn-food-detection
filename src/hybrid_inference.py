@@ -3,11 +3,16 @@ Hybrid Inference System for Vietnamese Food Detection
 Combines YOLOv10 detection with EfficientNet classification for enhanced accuracy.
 """
 
+import os
+import sys
 import torch
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from typing import List, Dict, Tuple, Optional
+
+# Add parent directory to path for imports to work in Streamlit Cloud
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.yolo_model import YOLODetector
 from src.model import get_model

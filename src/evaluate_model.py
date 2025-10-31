@@ -4,10 +4,14 @@ import torch.nn as nn
 import pandas as pd
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 import os
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import argparse
+
+# Add parent directory to path for imports to work in Streamlit Cloud
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.data_loader import get_data_loaders
 from src.model import get_model

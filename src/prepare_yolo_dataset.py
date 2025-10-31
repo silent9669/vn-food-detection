@@ -1,10 +1,14 @@
 import os
+import sys
 import pandas as pd
 import json
 from shutil import copyfile
 from tqdm import tqdm
 from pathlib import Path
 import yaml
+
+# Add parent directory to path for imports to work in Streamlit Cloud
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.settings import CLASSIFICATION_DATA_DIR, DETECTION_DATA_DIR, LABELS_CSV_PATH
 
