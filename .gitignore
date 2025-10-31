@@ -1,2 +1,3 @@
-data_master/
+data_master/*
+!data_master/labels.csv
 CRUSH.md
