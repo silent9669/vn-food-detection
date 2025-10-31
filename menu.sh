@@ -27,50 +27,11 @@ display_banner() {
 # Function to display main menu
 show_menu() {
     echo -e "\n${BOLD}Main Menu:${NC}"
-    echo -e "${GREEN}1)${NC} Train Model"
-    echo -e "${GREEN}2)${NC} Validate Model (Test with Images)"
-    echo -e "${GREEN}3)${NC} Evaluate Model (Full Dataset Metrics)"
-    echo -e "${CYAN}4)${NC} Verify Setup"
+    echo -e "${GREEN}1)${NC} Launch Training GUI ${CYAN}(Select model in GUI)${NC}"
+    echo -e "${GREEN}2)${NC} Launch Validation GUI ${CYAN}(Select mode in GUI)${NC}"
+    echo -e "${GREEN}3)${NC} Launch Evaluation GUI ${CYAN}(Select model in GUI)${NC}"
+    echo -e "${YELLOW}4)${NC} Verify Setup"
     echo -e "${RED}0)${NC} Exit"
-    echo ""
-    echo -e "${BOLD}Enter your choice:${NC} "
-}
-
-# Function to show training submenu
-show_train_menu() {
-    clear
-    display_banner
-    echo -e "\n${BOLD}Training Menu:${NC}"
-    echo -e "${GREEN}1)${NC} Train EfficientNet (Classification)"
-    echo -e "${GREEN}2)${NC} Train YOLOv10 (Detection)"
-    echo -e "${GREEN}3)${NC} Train Both Models (Sequential)"
-    echo -e "${YELLOW}0)${NC} Back to Main Menu"
-    echo ""
-    echo -e "${BOLD}Enter your choice:${NC} "
-}
-
-# Function to show validation submenu
-show_validate_menu() {
-    clear
-    display_banner
-    echo -e "\n${BOLD}Validation Menu:${NC}"
-    echo -e "${GREEN}1)${NC} Hybrid Mode (YOLO + EfficientNet) ${CYAN}[Recommended]${NC}"
-    echo -e "${GREEN}2)${NC} YOLOv10 Only (Detection)"
-    echo -e "${GREEN}3)${NC} EfficientNet Only (Classification)"
-    echo -e "${YELLOW}0)${NC} Back to Main Menu"
-    echo ""
-    echo -e "${BOLD}Enter your choice:${NC} "
-}
-
-# Function to show evaluation submenu
-show_evaluate_menu() {
-    clear
-    display_banner
-    echo -e "\n${BOLD}Evaluation Menu:${NC}"
-    echo -e "${GREEN}1)${NC} Evaluate EfficientNet"
-    echo -e "${GREEN}2)${NC} Evaluate YOLOv10"
-    echo -e "${GREEN}3)${NC} Evaluate Both Models"
-    echo -e "${YELLOW}0)${NC} Back to Main Menu"
     echo ""
     echo -e "${BOLD}Enter your choice:${NC} "
 }
@@ -82,83 +43,49 @@ pause() {
     read
 }
 
-# Function to train EfficientNet
-train_efficientnet() {
-    echo -e "\n${CYAN}Starting EfficientNet Training...${NC}"
+# Function to launch training GUI
+launch_training_gui() {
+    echo -e "\n${CYAN}Launching Training GUI...${NC}"
+    echo ""
 
-    # Check if model already exists
-    if [ -f "models/food_classifier.pth" ] || [ -f "models/efficientnet_b4_classifier.pth" ]; then
-        echo -e "${YELLOW}⚠️  Existing EfficientNet model found!${NC}"
-        echo ""
-        read -p "Continue training (will resume from checkpoint)? (y/n): " choice
-        if [[ ! "$choice" =~ ^[Yy]$ ]]; then
-            echo "Training cancelled."
-            pause
-            return
-        fi
+    # Display model status
+    echo -e "${BOLD}Current Model Status:${NC}"
+    if [ -f "models/efficientnet_b4_classifier.pth" ]; then
+        echo -e "${GREEN}✓${NC} EfficientNet model found (will resume if selected)"
+    else
+        echo -e "${YELLOW}○${NC} EfficientNet model not found (will train from scratch)"
     fi
 
-    echo -e "${YELLOW}This will open a Streamlit dashboard in your browser${NC}"
-    echo ""
-    python src/app.py train efficientnet
-    pause
-}
-
-# Function to train YOLO
-train_yolo() {
-    echo -e "\n${CYAN}Starting YOLOv10 Training...${NC}"
-
-    # Check if model already exists
     if [ -f "models/yolov10_detector.pt" ]; then
-        echo -e "${YELLOW}⚠️  Existing YOLOv10 model found!${NC}"
-        echo ""
-        read -p "Continue training (will resume from checkpoint)? (y/n): " choice
-        if [[ ! "$choice" =~ ^[Yy]$ ]]; then
-            echo "Training cancelled."
-            pause
-            return
-        fi
+        echo -e "${GREEN}✓${NC} YOLOv10 model found (will resume if selected)"
+    else
+        echo -e "${YELLOW}○${NC} YOLOv10 model not found (will train from scratch)"
     fi
 
-    echo -e "${YELLOW}This will open a Streamlit dashboard in your browser${NC}"
     echo ""
-    python src/app.py train yolo
+    echo -e "${BOLD}In the GUI you can:${NC}"
+    echo -e "  • Select which model to train (EfficientNet or YOLOv10)"
+    echo -e "  • Adjust training parameters (learning rate, epochs, etc.)"
+    echo -e "  • Switch between models without restarting"
+    echo -e "  • Monitor training progress in real-time"
+    echo ""
+    echo -e "${YELLOW}Opening Streamlit dashboard in your browser...${NC}"
+    echo ""
+
+    python src/app.py train
     pause
 }
 
-# Function to train both models
-train_both() {
-    echo -e "\n${CYAN}Training Both Models Sequentially...${NC}"
+# Function to launch validation GUI
+launch_validation_gui() {
+    echo -e "\n${CYAN}Launching Validation GUI...${NC}"
     echo ""
 
-    echo -e "${BOLD}Step 1/2: Training EfficientNet${NC}"
-    echo -e "${YELLOW}This will take approximately 2-3 hours${NC}"
-    read -p "Press Enter to start EfficientNet training..."
-    python src/app.py train efficientnet
-
-    echo ""
-    echo -e "${GREEN}✓ EfficientNet training completed${NC}"
-    echo ""
-
-    echo -e "${BOLD}Step 2/2: Training YOLOv10${NC}"
-    echo -e "${YELLOW}This will take approximately 8-12 hours${NC}"
-    read -p "Press Enter to start YOLOv10 training..."
-    python src/app.py train yolo
-
-    echo ""
-    echo -e "${GREEN}✓ Both models trained successfully!${NC}"
-    pause
-}
-
-# Function to validate with hybrid mode
-validate_hybrid() {
-    echo -e "\n${CYAN}Starting Hybrid Validation...${NC}"
-
-    # Check if both models exist
+    # Check model status
     efficientnet_exists=false
     yolo_exists=false
 
-    if [ -f "models/food_classifier.pth" ] || [ -f "models/efficientnet_b4_classifier.pth" ]; then
+    if [ -f "models/efficientnet_b4_classifier.pth" ]; then
         efficientnet_exists=true
     fi
 
@@ -166,93 +93,125 @@ validate_hybrid() {
         yolo_exists=true
     fi
 
-    if [ "$efficientnet_exists" = false ] || [ "$yolo_exists" = false ]; then
-        echo -e "${RED}✗ Error: Models not found!${NC}"
+    # Display model status
+    echo -e "${BOLD}Available Models:${NC}"
+    if [ "$efficientnet_exists" = true ]; then
+        echo -e "${GREEN}✓${NC} EfficientNet model found"
+    else
+        echo -e "${RED}✗${NC} EfficientNet model not found"
+    fi
+
+    if [ "$yolo_exists" = true ]; then
+        echo -e "${GREEN}✓${NC} YOLOv10 model found"
+    else
+        echo -e "${RED}✗${NC} YOLOv10 model not found"
+    fi
+
+    # Display available modes
+    echo ""
+    echo -e "${BOLD}Available Detection Modes in GUI:${NC}"
+    if [ "$efficientnet_exists" = true ] && [ "$yolo_exists" = true ]; then
+        echo -e "  ${GREEN}✓${NC} Hybrid Mode (YOLO + EfficientNet) ${CYAN}[Recommended]${NC}"
+    else
+        echo -e "  ${YELLOW}○${NC} Hybrid Mode (requires both models)"
+    fi
+
+    if [ "$yolo_exists" = true ]; then
+        echo -e "  ${GREEN}✓${NC} YOLO Only (Multi-dish detection)"
+    else
+        echo -e "  ${YELLOW}○${NC} YOLO Only (model not found)"
+    fi
+
+    if [ "$efficientnet_exists" = true ]; then
+        echo -e "  ${GREEN}✓${NC} EfficientNet Only (Single dish classification)"
+    else
+        echo -e "  ${YELLOW}○${NC} EfficientNet Only (model not found)"
+    fi
+
+    # Warn if no models found
+    if [ "$efficientnet_exists" = false ] && [ "$yolo_exists" = false ]; then
         echo ""
-        [ "$efficientnet_exists" = false ] && echo -e "${YELLOW}  Missing: EfficientNet model${NC}"
-        [ "$yolo_exists" = false ] && echo -e "${YELLOW}  Missing: YOLOv10 model${NC}"
-        echo ""
-        echo -e "Please train the models first:"
+        echo -e "${RED}⚠️  Warning: No trained models found!${NC}"
+        echo -e "Please train at least one model first:"
         echo -e "  ${CYAN}./menu.sh${NC} → 1. Train Model"
-        pause
-        return
+        echo ""
+        read -p "Continue anyway? (y/n): " choice
+        if [[ ! "$choice" =~ ^[Yy]$ ]]; then
+            return
+        fi
     fi
 
-    echo -e "${GREEN}✓ Both models found${NC}"
-    echo -e "${YELLOW}This will open a Streamlit interface in your browser${NC}"
     echo ""
-    python src/app.py validate hybrid
+    echo -e "${BOLD}In the GUI you can:${NC}"
+    echo -e "  • Select detection mode (Hybrid/YOLO/EfficientNet)"
+    echo -e "  • Upload images, use URLs, or capture from camera"
+    echo -e "  • Adjust confidence and IoU thresholds"
+    echo -e "  • View nutrition information"
+    echo -e "  • Switch modes without restarting"
+    echo ""
+    echo -e "${YELLOW}Opening Streamlit interface in your browser...${NC}"
+    echo ""
+
+    python src/app.py validate
     pause
 }
 
-# Function to validate with YOLO only
-validate_yolo() {
-    echo -e "\n${CYAN}Starting YOLO Validation...${NC}"
+# Function to launch evaluation GUI
+launch_evaluation_gui() {
+    echo -e "\n${CYAN}Launching Evaluation GUI...${NC}"
+    echo ""
 
-    if [ ! -f "models/yolov10_detector.pt" ]; then
-        echo -e "${RED}✗ YOLOv10 model not found!${NC}"
-        echo -e "Please train first: ${CYAN}./menu.sh${NC} → 1. Train Model → 2. Train YOLOv10"
-        pause
-        return
+    # Check model status
+    efficientnet_exists=false
+    yolo_exists=false
+
+    if [ -f "models/efficientnet_b4_classifier.pth" ]; then
+        efficientnet_exists=true
     fi
 
-    echo -e "${GREEN}✓ Model found${NC}"
-    echo -e "${YELLOW}This will open a Streamlit interface in your browser${NC}"
-    echo ""
-    python src/app.py validate yolo
-    pause
-}
-
-# Function to validate with EfficientNet only
-validate_efficientnet() {
-    echo -e "\n${CYAN}Starting EfficientNet Validation...${NC}"
-
-    if [ ! -f "models/food_classifier.pth" ] && [ ! -f "models/efficientnet_b4_classifier.pth" ]; then
-        echo -e "${RED}✗ EfficientNet model not found!${NC}"
-        echo -e "Please train first: ${CYAN}./menu.sh${NC} → 1. Train Model → 1. Train EfficientNet"
-        pause
-        return
+    if [ -f "models/yolov10_detector.pt" ]; then
+        yolo_exists=true
     fi
 
-    echo -e "${GREEN}✓ Model found${NC}"
-    echo -e "${YELLOW}This will open a Streamlit interface in your browser${NC}"
-    echo ""
-    python src/app.py validate efficientnet
-    pause
-}
+    # Display model status
+    echo -e "${BOLD}Available Models for Evaluation:${NC}"
+    if [ "$efficientnet_exists" = true ]; then
+        echo -e "${GREEN}✓${NC} EfficientNet model found"
+    else
+        echo -e "${RED}✗${NC} EfficientNet model not found"
+    fi
 
-# Function to evaluate EfficientNet
-evaluate_efficientnet() {
-    echo -e "\n${CYAN}Evaluating EfficientNet...${NC}"
-    echo -e "${YELLOW}This will calculate metrics on the validation dataset${NC}"
-    echo ""
-    python src/app.py evaluate efficientnet
-    pause
-}
+    if [ "$yolo_exists" = true ]; then
+        echo -e "${GREEN}✓${NC} YOLOv10 model found"
+    else
+        echo -e "${RED}✗${NC} YOLOv10 model not found"
+    fi
 
-# Function to evaluate YOLO
-evaluate_yolo() {
-    echo -e "\n${CYAN}Evaluating YOLOv10...${NC}"
-    echo -e "${YELLOW}This will calculate mAP and other detection metrics${NC}"
-    echo ""
-    python src/app.py evaluate yolo
-    pause
-}
-
-# Function to evaluate both
-evaluate_both() {
-    echo -e "\n${CYAN}Evaluating Both Models...${NC}"
-    echo ""
-
-    echo -e "${BOLD}Evaluating EfficientNet...${NC}"
-    python src/app.py evaluate efficientnet
+    # Warn if no models found
+    if [ "$efficientnet_exists" = false ] && [ "$yolo_exists" = false ]; then
+        echo ""
+        echo -e "${RED}⚠️  Warning: No trained models found!${NC}"
+        echo -e "Please train at least one model first:"
+        echo -e "  ${CYAN}./menu.sh${NC} → 1. Train Model"
+        echo ""
+        read -p "Continue anyway? (y/n): " choice
+        if [[ ! "$choice" =~ ^[Yy]$ ]]; then
+            return
+        fi
+    fi
 
     echo ""
-    echo -e "${BOLD}Evaluating YOLOv10...${NC}"
-    python src/app.py evaluate yolo
-
+    echo -e "${BOLD}In the GUI you can:${NC}"
+    echo -e "  • Select which model to evaluate (EfficientNet or YOLOv10)"
+    echo -e "  • Configure evaluation settings (batch size, data paths)"
+    echo -e "  • View detailed metrics and confusion matrices"
+    echo -e "  • Results are saved to 'results/' directory"
+    echo -e "  • Switch between models without restarting"
     echo ""
-    echo -e "${GREEN}✓ Evaluation complete! Check results/ directory${NC}"
+    echo -e "${YELLOW}Opening Streamlit evaluation dashboard in your browser...${NC}"
+    echo ""
+
+    python src/app.py evaluate
     pause
 }
 
@@ -273,43 +232,13 @@ main() {
 
         case $choice in
             1)
-                while true; do
-                    show_train_menu
-                    read -r train_choice
-                    case $train_choice in
-                        1) train_efficientnet ;;
-                        2) train_yolo ;;
-                        3) train_both ;;
-                        0) break ;;
-                        *) echo -e "${RED}Invalid option. Please try again.${NC}"; sleep 1 ;;
-                    esac
-                done
+                launch_training_gui
                 ;;
             2)
-                while true; do
-                    show_validate_menu
-                    read -r validate_choice
-                    case $validate_choice in
-                        1) validate_hybrid ;;
-                        2) validate_yolo ;;
-                        3) validate_efficientnet ;;
-                        0) break ;;
-                        *) echo -e "${RED}Invalid option. Please try again.${NC}"; sleep 1 ;;
-                    esac
-                done
+                launch_validation_gui
                 ;;
             3)
-                while true; do
-                    show_evaluate_menu
-                    read -r evaluate_choice
-                    case $evaluate_choice in
-                        1) evaluate_efficientnet ;;
-                        2) evaluate_yolo ;;
-                        3) evaluate_both ;;
-                        0) break ;;
-                        *) echo -e "${RED}Invalid option. Please try again.${NC}"; sleep 1 ;;
-                    esac
-                done
+                launch_evaluation_gui
                 ;;
             4)
                 verify_setup

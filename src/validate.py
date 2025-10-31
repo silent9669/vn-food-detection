@@ -4,7 +4,6 @@ import streamlit as st
 from PIL import Image
 import torch
 import pandas as pd
-import argparse
 import tempfile
 import requests
 from io import BytesIO
@@ -36,42 +35,35 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Streamlit Validation GUI - Hybrid Food Detection System")
-    parser.add_argument("--model_type", type=str, default="hybrid",
-                        choices=["efficientnet", "yolo", "hybrid"],
-                        help="Type of model to use for validation (default: hybrid)")
-    return parser.parse_args()
+# Main title
+st.title("🍜 Vietnamese Food Detection System")
 
-args = parse_args()
-model_type = args.model_type
-
-st.title("🍜 Vietnamese Food Detection - Hybrid System")
-st.markdown(f"**Mode**: {model_type.replace('_', ' ').title()}")
-st.markdown("---")
-
-# Add mode selector in sidebar
-st.sidebar.header("Detection Mode")
+# Model selection in main UI
+st.header("1. Select Detection Mode")
 mode_options = {
     "hybrid": "🎯 Hybrid (YOLO + EfficientNet) - Recommended",
     "yolo": "📦 YOLO Only (Multi-dish detection)",
     "efficientnet": "🎨 EfficientNet Only (Single dish)"
 }
-selected_mode = st.sidebar.radio(
-    "Choose detection mode:",
+
+model_type = st.selectbox(
+    "Choose your detection mode:",
     ["hybrid", "yolo", "efficientnet"],
     format_func=lambda x: mode_options[x],
     index=0  # Default to hybrid
 )
 
-# Update model_type based on selection
-if selected_mode != model_type:
-    st.sidebar.warning("Please restart with: python app.py validate " + selected_mode)
+# Display mode info
+if model_type == "hybrid":
+    st.info("**Hybrid Mode** combines YOLOv10 detection with EfficientNet classification for best accuracy!")
+elif model_type == "yolo":
+    st.info("**YOLO Mode** uses YOLOv10 for fast multi-instance detection.")
+elif model_type == "efficientnet":
+    st.info("**EfficientNet Mode** provides detailed classification for single dishes.")
 
-st.sidebar.markdown("---")
-st.sidebar.info("**Hybrid Mode** combines YOLOv10 detection with EfficientNet classification for best accuracy!")
+st.markdown("---")
 
-# Load the trained model
+# Load device
 device = torch.device(DEVICE)
 
 # Load labels and create mappings
@@ -81,62 +73,130 @@ num_classes = len(class_names)
 idx_to_class = {i: class_name for i, class_name in enumerate(class_names)}
 class_to_idx = {class_name: i for i, class_name in enumerate(class_names)}
 
-# Initialize models based on mode
+# Cached model loading functions
+@st.cache_resource
+def load_efficientnet_model():
+    """Load and cache EfficientNet model"""
+    if not os.path.exists(EFFICIENTNET_CHECKPOINT):
+        return None
+    model = get_model(num_classes)
+    model = load_model(model, EFFICIENTNET_CHECKPOINT, device=device)
+    model.eval()
+    return model
+
+@st.cache_resource
+def load_yolo_model():
+    """Load and cache YOLO model"""
+    if not os.path.exists(YOLO_CHECKPOINT):
+        return None
+    detector = YOLODetector(model_path=YOLO_CHECKPOINT, device=DEVICE)
+    return detector
+
+@st.cache_resource
+def load_hybrid_model():
+    """Load and cache Hybrid detector"""
+    if not os.path.exists(EFFICIENTNET_CHECKPOINT) or not os.path.exists(YOLO_CHECKPOINT):
+        return None
+    detector = HybridFoodDetector(
+        yolo_checkpoint=YOLO_CHECKPOINT,
+        efficientnet_checkpoint=EFFICIENTNET_CHECKPOINT,
+        labels_csv=LABELS_CSV_PATH,
+        device=DEVICE,
+        conf_threshold=VALIDATION["conf_threshold"],
+        iou_threshold=VALIDATION["iou_threshold"]
+    )
+    return detector
+
+# Load models based on selected mode
 efficientnet_model = None
 yolo_detector = None
 hybrid_detector = None
 
-try:
-    if model_type == "efficientnet":
-        st.write(f"Loading EfficientNet model from {EFFICIENTNET_CHECKPOINT}...")
-        if not os.path.exists(EFFICIENTNET_CHECKPOINT):
-            st.error(f"EfficientNet model not found at {EFFICIENTNET_CHECKPOINT}")
-            st.info("Please train the EfficientNet model first using: python app.py train efficientnet")
-            st.stop()
-        efficientnet_model = get_model(num_classes)
-        efficientnet_model = load_model(efficientnet_model, EFFICIENTNET_CHECKPOINT, device=device)
-        efficientnet_model.eval()
-        st.success("EfficientNet model loaded successfully!")
+st.header("2. Load Model")
+with st.spinner(f"Loading {model_type} model..."):
+    try:
+        if model_type == "efficientnet":
+            efficientnet_model = load_efficientnet_model()
+            if efficientnet_model is None:
+                st.error(f"EfficientNet model not found at {EFFICIENTNET_CHECKPOINT}")
+                st.info("Please train the EfficientNet model first using: `python app.py train`")
+                st.stop()
+            st.success("✓ EfficientNet model loaded successfully!")
 
-    elif model_type == "yolo":
-        st.write(f"Loading YOLOv10 model from {YOLO_CHECKPOINT}...")
-        if not os.path.exists(YOLO_CHECKPOINT):
-            st.error(f"YOLOv10 model not found at {YOLO_CHECKPOINT}")
-            st.info("Please train the YOLOv10 model first using: python app.py train yolo")
-            st.stop()
-        yolo_detector = YOLODetector(model_path=YOLO_CHECKPOINT, device=DEVICE)
-        st.success("YOLOv10 model loaded successfully!")
+        elif model_type == "yolo":
+            yolo_detector = load_yolo_model()
+            if yolo_detector is None:
+                st.error(f"YOLOv10 model not found at {YOLO_CHECKPOINT}")
+                st.info("Please train the YOLOv10 model first using: `python app.py train`")
+                st.stop()
+            st.success("✓ YOLOv10 model loaded successfully!")
 
-    elif model_type == "hybrid":
-        st.write("Loading Hybrid Detection System...")
-        if not os.path.exists(EFFICIENTNET_CHECKPOINT):
-            st.error(f"EfficientNet model not found at {EFFICIENTNET_CHECKPOINT}")
-            st.info("Please train the EfficientNet model first.")
-            st.stop()
-        if not os.path.exists(YOLO_CHECKPOINT):
-            st.error(f"YOLOv10 model not found at {YOLO_CHECKPOINT}")
-            st.info("Please train the YOLOv10 model first.")
-            st.stop()
+        elif model_type == "hybrid":
+            hybrid_detector = load_hybrid_model()
+            if hybrid_detector is None:
+                st.error("One or both models not found!")
+                if not os.path.exists(EFFICIENTNET_CHECKPOINT):
+                    st.error(f"  - EfficientNet: {EFFICIENTNET_CHECKPOINT}")
+                if not os.path.exists(YOLO_CHECKPOINT):
+                    st.error(f"  - YOLOv10: {YOLO_CHECKPOINT}")
+                st.info("Please train both models first using: `python app.py train`")
+                st.stop()
+            st.success("✓ Hybrid detection system loaded successfully!")
 
-        hybrid_detector = HybridFoodDetector(
-            yolo_checkpoint=YOLO_CHECKPOINT,
-            efficientnet_checkpoint=EFFICIENTNET_CHECKPOINT,
-            labels_csv=LABELS_CSV_PATH,
-            device=DEVICE,
-            conf_threshold=VALIDATION["conf_threshold"],
-            iou_threshold=VALIDATION["iou_threshold"]
-        )
-        st.success("Hybrid detection system loaded successfully!")
+    except Exception as e:
+        st.error(f"Error loading models: {str(e)}")
+        import traceback
+        st.code(traceback.format_exc())
+        st.stop()
 
-except Exception as e:
-    st.error(f"Error loading models: {str(e)}")
-    import traceback
-    st.code(traceback.format_exc())
-    st.stop()
+st.markdown("---")
 
+# Sidebar information
+st.sidebar.header("ℹ️ System Information")
+st.sidebar.write(f"**Device:** {DEVICE}")
+st.sidebar.write(f"**Detection Mode:** {model_type.upper()}")
+
+st.sidebar.markdown("---")
+st.sidebar.header("📁 Model Checkpoints")
+if model_type == "efficientnet":
+    st.sidebar.write(f"**Using:** {EFFICIENTNET_CHECKPOINT}")
+    st.sidebar.write(f"**Classes:** {num_classes}")
+elif model_type == "yolo":
+    st.sidebar.write(f"**Using:** {YOLO_CHECKPOINT}")
+    st.sidebar.write(f"**Classes:** {num_classes}")
+elif model_type == "hybrid":
+    st.sidebar.write(f"**YOLO:** {YOLO_CHECKPOINT}")
+    st.sidebar.write(f"**EfficientNet:** {EFFICIENTNET_CHECKPOINT}")
+    st.sidebar.write(f"**Classes:** {num_classes}")
+
+st.sidebar.markdown("---")
+st.sidebar.header("⚙️ Detection Parameters")
+if model_type in ["yolo", "hybrid"]:
+    conf_thresh = st.sidebar.slider("Confidence Threshold", 0.0, 1.0, VALIDATION["conf_threshold"], 0.05)
+    iou_thresh = st.sidebar.slider("IoU Threshold", 0.0, 1.0, VALIDATION["iou_threshold"], 0.05)
+    # Update thresholds if using cached models
+    if model_type == "yolo" and yolo_detector:
+        # Note: These would need to be passed to predict method
+        pass
+    elif model_type == "hybrid" and hybrid_detector:
+        # Update hybrid detector thresholds
+        hybrid_detector.conf_threshold = conf_thresh
+        hybrid_detector.iou_threshold = iou_thresh
+else:
+    st.sidebar.info("EfficientNet mode has no adjustable thresholds")
+
+st.sidebar.markdown("---")
+st.sidebar.header("💡 Tips")
+st.sidebar.info(
+    "- Switch modes using the dropdown above\n"
+    "- Models are cached for fast switching\n"
+    "- Hybrid mode provides best accuracy\n"
+    "- Adjust thresholds for fine-tuning"
+)
 
 # Create tabs for different input methods
-st.subheader("📸 Select Image Input Method")
+st.header("3. Input Image")
+st.subheader("📸 Choose Image Input Method")
 input_tab1, input_tab2, input_tab3 = st.tabs(["📁 Upload Image", "🔗 Image URL", "📷 Camera Capture"])
 
 image = None
@@ -239,11 +299,11 @@ if image is not None:
                 st.subheader("🎯 Detection Results")
                 st.write("Detecting with YOLOv10...")
 
-                # Run YOLO detection
+                # Run YOLO detection with adjustable thresholds
                 detections, yolo_result = yolo_detector.predict(
                     temp_image_path,
-                    conf_threshold=VALIDATION["conf_threshold"],
-                    iou_threshold=VALIDATION["iou_threshold"]
+                    conf_threshold=conf_thresh,
+                    iou_threshold=iou_thresh
                 )
 
                 if len(detections) == 0:

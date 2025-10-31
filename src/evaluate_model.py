@@ -8,7 +8,6 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-import argparse
 
 # Add parent directory to path for imports to work in Streamlit Cloud
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -28,17 +27,22 @@ from src.settings import (
     YOLO_MODEL_NAME
 )
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Streamlit Model Evaluation Dashboard")
-    parser.add_argument("--model_type", type=str, default="efficientnet",
-                        choices=["efficientnet", "yolo"],
-                        help="Type of model to evaluate: efficientnet or yolo")
-    return parser.parse_args()
+# Main title
+st.title("Model Evaluation Dashboard")
 
-args = parse_args()
-model_type = args.model_type
+# Model selection in the main UI
+st.header("1. Select Model to Evaluate")
+model_type = st.selectbox(
+    "Choose the model you want to evaluate:",
+    ["EfficientNet", "YOLOv10"],
+    key="eval_model_selector"
+)
 
-st.title(f"{model_type.replace('_', ' ').title()} Model Evaluation")
+# Convert display name to internal name
+model_type = "efficientnet" if model_type == "EfficientNet" else "yolo"
+
+st.info(f"Evaluating Model: **{model_type.upper()}**")
+st.markdown("---")
 
 def load_evaluation_model(model_type, num_classes, model_path, device):
     if model_type == "efficientnet":
@@ -69,24 +73,64 @@ def get_evaluation_data(model_type, data_dir, csv_file, batch_size):
 
 
 device = torch.device(DEVICE)
-st.write(f"Using device for evaluation: {device}")
 
-# Configuration options
-st.sidebar.header("Evaluation Settings")
+# Sidebar information
+st.sidebar.header("ℹ️ System Information")
+st.sidebar.write(f"**Device:** {DEVICE}")
+st.sidebar.write(f"**Evaluation Mode:** {model_type.upper()}")
+
+st.sidebar.markdown("---")
+st.sidebar.header("📁 Model Checkpoints")
+if model_type == "efficientnet":
+    st.sidebar.write(f"**Model:** {EFFICIENTNET_MODEL_NAME}")
+    st.sidebar.write(f"**Checkpoint:** `{EFFICIENTNET_CHECKPOINT}`")
+    st.sidebar.write(f"**Data Dir:** `{CLASSIFICATION_DATA_DIR}`")
+    if os.path.exists(EFFICIENTNET_CHECKPOINT):
+        st.sidebar.success("✓ Model found")
+    else:
+        st.sidebar.error("✗ Model not found")
+else:  # yolo
+    st.sidebar.write(f"**Model:** {YOLO_MODEL_NAME}")
+    st.sidebar.write(f"**Checkpoint:** `{YOLO_CHECKPOINT}`")
+    st.sidebar.write(f"**Data Dir:** `{DETECTION_DATA_DIR}`")
+    if os.path.exists(YOLO_CHECKPOINT):
+        st.sidebar.success("✓ Model found")
+    else:
+        st.sidebar.error("✗ Model not found")
+
+st.sidebar.markdown("---")
+st.sidebar.header("💡 Tips")
+st.sidebar.info(
+    "- Switch models using the dropdown above\n"
+    "- Evaluation runs on validation dataset\n"
+    "- Results are saved to 'results/' folder\n"
+    "- Check confusion matrix for insights"
+)
+
+# Configuration options in main UI
+st.header("2. Configure Evaluation Settings")
 
 if model_type == "efficientnet":
-    data_directory = st.sidebar.text_input("Data Directory", value=CLASSIFICATION_DATA_DIR)
-    csv_filepath = st.sidebar.text_input("Labels CSV File", value=LABELS_CSV_PATH)
-    model_filepath = st.sidebar.text_input("Model Path", value=EFFICIENTNET_CHECKPOINT)
-    batch_size_eval = st.sidebar.number_input("Batch Size for Evaluation", value=8, min_value=1)
+    col1, col2 = st.columns(2)
+    with col1:
+        data_directory = st.text_input("Data Directory", value=CLASSIFICATION_DATA_DIR, key="eff_eval_data_dir")
+        model_filepath = st.text_input("Model Path", value=EFFICIENTNET_CHECKPOINT, key="eff_eval_model_path")
+    with col2:
+        csv_filepath = st.text_input("Labels CSV File", value=LABELS_CSV_PATH, key="eff_eval_csv")
+        batch_size_eval = st.number_input("Batch Size for Evaluation", value=8, min_value=1, key="eff_eval_batch")
 elif model_type == "yolo":
-    data_directory = st.sidebar.text_input("Data Directory", value=DETECTION_DATA_DIR)
-    csv_filepath = st.sidebar.text_input("Labels CSV File", value=LABELS_CSV_PATH) # YOLO needs class names from here
-    model_filepath = st.sidebar.text_input("Model Path", value=YOLO_CHECKPOINT)
-    batch_size_eval = st.sidebar.number_input("Batch Size for Evaluation", value=4, min_value=1)
+    col1, col2 = st.columns(2)
+    with col1:
+        data_directory = st.text_input("Data Directory", value=DETECTION_DATA_DIR, key="yolo_eval_data_dir")
+        model_filepath = st.text_input("Model Path", value=YOLO_CHECKPOINT, key="yolo_eval_model_path")
+    with col2:
+        csv_filepath = st.text_input("Labels CSV File", value=LABELS_CSV_PATH, key="yolo_eval_csv")
+        batch_size_eval = st.number_input("Batch Size for Evaluation", value=4, min_value=1, key="yolo_eval_batch")
 
+st.markdown("---")
+st.header("3. Run Evaluation")
 
-if st.sidebar.button("Run Evaluation"):
+if st.button("🚀 Start Evaluation", type="primary", use_container_width=True):
     if model_type == "efficientnet":
         if not os.path.exists(model_filepath):
             st.error(f"Model file not found at {model_filepath}. Please train an EfficientNet model first.")

@@ -1,3 +1,39 @@
+# Data directories
 data_master/*
 !data_master/labels.csv
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Model checkpoints (optional - uncomment if you don't want to track models)
+# models/*.pth
+# models/*.pt
+
+# Training outputs
+runs/
+wandb/
+
+# Temporary files
+*.tmp
+*.bak
+.DS_Store
+
+# Deprecated documentation
 CRUSH.md
+YOLO_DATASET.md

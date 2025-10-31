@@ -7,12 +7,10 @@ import sys
 # Ensure the src directory is in the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-def run_streamlit(script_name, model_type=None):
+def run_streamlit(script_name):
     """Helper function to run a Streamlit script."""
     command = ["streamlit", "run", f"src/{script_name}.py"]
-    if model_type:
-        command.extend(["--", f"--model_type={model_type}"])
-    
+
     print(f"Running command: {' '.join(command)}")
     try:
         subprocess.run(command, check=True)
@@ -46,17 +44,14 @@ Examples:
   # Prepare dataset for YOLO training
   python app.py prepare-dataset yolo
 
-  # Train models
-  python app.py train efficientnet
-  python app.py train yolo
+  # Launch training GUI (select model in UI)
+  python app.py train
 
-  # Validate with hybrid mode (recommended)
+  # Launch validation GUI (select model in UI)
   python app.py validate
-  python app.py validate hybrid
 
-  # Evaluate models
-  python app.py evaluate efficientnet
-  python app.py evaluate yolo
+  # Launch evaluation GUI (select model in UI)
+  python app.py evaluate
 
 For more information, see README.md
         """
@@ -64,23 +59,13 @@ For more information, see README.md
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # --- Training ---
-    train_parser = subparsers.add_parser("train", help="Train a model")
-    train_parser.add_argument(
-        "model", choices=["efficientnet", "yolo"], help="The model to train."
-    )
+    train_parser = subparsers.add_parser("train", help="Launch training GUI")
 
     # --- Validation ---
-    validate_parser = subparsers.add_parser("validate", help="Validate models with single image (default: hybrid)")
-    validate_parser.add_argument(
-        "model", nargs='?', default="hybrid", choices=["efficientnet", "yolo", "hybrid"],
-        help="The model/mode to use for validation (default: hybrid - recommended)"
-    )
-    
+    validate_parser = subparsers.add_parser("validate", help="Launch validation GUI")
+
     # --- Evaluation ---
-    evaluate_parser = subparsers.add_parser("evaluate", help="Evaluate a model on a dataset")
-    evaluate_parser.add_argument(
-        "model", choices=["efficientnet", "yolo"], help="The model to evaluate."
-    )
+    evaluate_parser = subparsers.add_parser("evaluate", help="Launch evaluation GUI")
 
     # --- Dataset Preparation ---
     prepare_parser = subparsers.add_parser("prepare-dataset", help="Prepare datasets for training (e.g., YOLO format)")
@@ -96,20 +81,19 @@ For more information, see README.md
     args = parser.parse_args()
 
     if args.command == "train":
-        print(f"Launching Streamlit training dashboard for {args.model}...")
-        run_streamlit("train", model_type=args.model)
-            
+        print("Launching Streamlit training GUI...")
+        print("Select your model and configure parameters in the GUI.")
+        run_streamlit("train")
+
     elif args.command == "validate":
-        print(f"Launching Streamlit validation GUI for {args.model}...")
-        # Pass the model type to the validation script
-        run_streamlit("validate", model_type=args.model)
+        print("Launching Streamlit validation GUI...")
+        print("Select your model (EfficientNet/YOLO/Hybrid) in the GUI.")
+        run_streamlit("validate")
 
     elif args.command == "evaluate":
-        print(f"Launching Streamlit evaluation dashboard for {args.model}...")
-        if args.model == "efficientnet":
-             run_streamlit("evaluate_model", model_type=args.model)
-        elif args.model == "yolo":
-            run_streamlit("evaluate_model", model_type=args.model)
+        print("Launching Streamlit evaluation GUI...")
+        print("Select your model and configure parameters in the GUI.")
+        run_streamlit("evaluate_model")
 
     elif args.command == "prepare-dataset":
         if args.dataset == "yolo":

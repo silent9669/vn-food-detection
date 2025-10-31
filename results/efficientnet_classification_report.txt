@@ -1,36 +1,36 @@
                   precision    recall  f1-score   support
 
-        Banh_beo       0.89      0.84      0.87        90
-    Banh_bot_loc       0.82      0.75      0.78       101
-        Banh_can       0.84      0.88      0.86       104
-       Banh_canh       0.61      0.71      0.66       135
-      Banh_chung       0.75      0.86      0.80        71
-       Banh_cuon       0.84      0.94      0.89       160
-        Banh_duc       0.80      0.56      0.66        93
-        Banh_gio       0.86      0.91      0.89        89
-       Banh_khot       0.93      0.87      0.90       117
+        Banh_beo       0.87      0.83      0.85        90
+    Banh_bot_loc       0.81      0.72      0.76       101
+        Banh_can       0.82      0.90      0.86       104
+       Banh_canh       0.60      0.70      0.65       135
+      Banh_chung       0.75      0.85      0.79        71
+       Banh_cuon       0.82      0.93      0.87       160
+        Banh_duc       0.82      0.55      0.66        93
+        Banh_gio       0.87      0.88      0.87        89
+       Banh_khot       0.93      0.89      0.91       117
          Banh_mi       0.98      0.96      0.97       187
-        Banh_pia       0.95      0.95      0.95        62
-        Banh_tet       0.90      0.84      0.87        96
-Banh_trang_nuong       0.94      0.91      0.92       111
-        Banh_xeo       0.95      0.91      0.93       164
-      Bun_bo_Hue       0.73      0.84      0.78       214
- Bun_dau_mam_tom       0.98      0.95      0.96       128
-         Bun_mam       0.76      0.78      0.77       108
-        Bun_rieu       0.81      0.81      0.81       161
-  Bun_thit_nuong       0.76      0.83      0.79       104
+        Banh_pia       0.95      0.94      0.94        62
+        Banh_tet       0.88      0.84      0.86        96
+Banh_trang_nuong       0.94      0.89      0.92       111
+        Banh_xeo       0.95      0.89      0.92       164
+      Bun_bo_Hue       0.73      0.83      0.77       214
+ Bun_dau_mam_tom       0.99      0.95      0.97       128
+         Bun_mam       0.77      0.76      0.77       108
+        Bun_rieu       0.81      0.80      0.80       161
+  Bun_thit_nuong       0.75      0.83      0.79       104
        Ca_kho_to       0.96      0.96      0.96        95
-       Canh_chua       0.82      0.83      0.83       115
-         Cao_lau       0.90      0.90      0.90        86
-       Chao_long       0.94      0.87      0.90       150
-         Com_tam       0.91      0.93      0.92       132
-        Goi_cuon       0.92      0.92      0.92       120
-         Hu_tieu       0.80      0.59      0.68       138
-        Mi_quang       0.88      0.86      0.87       124
-        Nem_chua       0.73      0.72      0.73        76
-             Pho       0.62      0.71      0.66       113
-         Xoi_xeo       0.96      0.89      0.92        73
+       Canh_chua       0.79      0.83      0.81       115
+         Cao_lau       0.85      0.92      0.88        86
+       Chao_long       0.92      0.89      0.90       150
+         Com_tam       0.92      0.93      0.93       132
+        Goi_cuon       0.90      0.92      0.91       120
+         Hu_tieu       0.75      0.60      0.67       138
+        Mi_quang       0.86      0.86      0.86       124
+        Nem_chua       0.71      0.72      0.72        76
+             Pho       0.70      0.72      0.71       113
+         Xoi_xeo       0.97      0.89      0.93        73
 
-        accuracy                           0.85      3517
+        accuracy                           0.84      3517
        macro avg       0.85      0.84      0.84      3517
-    weighted avg       0.85      0.85      0.85      3517
+    weighted avg       0.85      0.84      0.84      3517

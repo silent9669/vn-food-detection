@@ -7,7 +7,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-import argparse
 
 # Add parent directory to path for imports to work in Streamlit Cloud
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -30,33 +29,80 @@ from src.settings import (
     DETECTION_DATA_DIR
 )
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Streamlit Training Dashboard")
-    parser.add_argument("--model_type", type=str, default="efficientnet",
-                        choices=["efficientnet", "yolo"],
-                        help="Type of model to train: efficientnet or yolo")
-    return parser.parse_args()
+# Main title
+st.title("Model Training Dashboard")
 
-args = parse_args()
-model_type = args.model_type
+# Model selection in the main UI area
+st.header("1. Select Model to Train")
+model_type = st.selectbox(
+    "Choose the model you want to train:",
+    ["EfficientNet", "YOLOv10"],
+    key="model_selector"
+)
 
-st.title(f"Train {model_type.replace('_', ' ').title()} Model")
-print(f"Streamlit app started for {model_type} training.")
+# Convert display name to internal name
+model_type = "efficientnet" if model_type == "EfficientNet" else "yolo"
 
-# Sidebar for settings
-st.sidebar.header(f"{model_type.replace('_', ' ').title()} Training Settings")
+st.info(f"Selected Model: **{model_type.upper()}**")
+st.markdown("---")
+
+# Sidebar for information and quick settings
+st.sidebar.header("ℹ️ System Information")
+st.sidebar.write(f"**Device:** {DEVICE}")
+st.sidebar.write(f"**Workers:** {NUM_WORKERS}")
+st.sidebar.write(f"**Pin Memory:** {PIN_MEMORY}")
+
+st.sidebar.markdown("---")
+st.sidebar.header("📁 Model Checkpoints")
 
 if model_type == "efficientnet":
-    config = EFFICIENTNET_TRAIN
-    learning_rate_classifier = st.sidebar.number_input("Learning Rate (Classifier)", value=config["learning_rate_classifier"], format="%.6f")
-    learning_rate_backbone = st.sidebar.number_input("Learning Rate (Backbone)", value=config["learning_rate_backbone"], format="%.6f")
-    epochs = st.sidebar.number_input("Epochs", value=config["epochs"])
-    batch_size = st.sidebar.number_input("Batch Size", value=config["batch_size"])
-    unfreeze_blocks = st.sidebar.number_input("Unfreeze Backbone Blocks (0 for classifier only)", value=config["unfreeze_blocks"])
-    patience = st.sidebar.number_input("Early Stopping Patience", value=config["patience"])
-    limit_data = st.sidebar.number_input("Limit Data (for debugging, 0 for full dataset)", value=0)
+    st.sidebar.write(f"**Model:** {EFFICIENTNET_MODEL_NAME}")
+    st.sidebar.write(f"**Checkpoint:** `{EFFICIENTNET_CHECKPOINT}`")
+    st.sidebar.write(f"**Data Dir:** `{CLASSIFICATION_DATA_DIR}`")
+    if os.path.exists(EFFICIENTNET_CHECKPOINT):
+        st.sidebar.success("✓ Checkpoint exists (will resume)")
+    else:
+        st.sidebar.info("ℹ️ Training from scratch")
+else:  # yolo
+    st.sidebar.write(f"**Model:** {YOLO_MODEL_NAME}")
+    st.sidebar.write(f"**Checkpoint:** `{YOLO_CHECKPOINT}`")
+    st.sidebar.write(f"**Data Dir:** `{DETECTION_DATA_DIR}`")
+    if os.path.exists(YOLO_CHECKPOINT):
+        st.sidebar.success("✓ Checkpoint exists")
+    else:
+        st.sidebar.info("ℹ️ Training from scratch")
 
-    if st.sidebar.button("Start Training"):
+st.sidebar.markdown("---")
+st.sidebar.header("💡 Tips")
+st.sidebar.info(
+    "- Switch models using the dropdown above\n"
+    "- Adjust parameters before starting training\n"
+    "- Training progress will show in real-time\n"
+    "- Best model is saved automatically"
+)
+
+if model_type == "efficientnet":
+    st.header("2. Configure Training Parameters")
+
+    config = EFFICIENTNET_TRAIN
+
+    col1, col2 = st.columns(2)
+    with col1:
+        learning_rate_classifier = st.number_input("Learning Rate (Classifier)", value=config["learning_rate_classifier"], format="%.6f", key="eff_lr_cls")
+        epochs = st.number_input("Epochs", value=config["epochs"], min_value=1, key="eff_epochs")
+        unfreeze_blocks = st.number_input("Unfreeze Backbone Blocks (0 for classifier only)", value=config["unfreeze_blocks"], min_value=0, key="eff_unfreeze")
+
+    with col2:
+        learning_rate_backbone = st.number_input("Learning Rate (Backbone)", value=config["learning_rate_backbone"], format="%.6f", key="eff_lr_bb")
+        batch_size = st.number_input("Batch Size", value=config["batch_size"], min_value=1, key="eff_batch")
+        patience = st.number_input("Early Stopping Patience", value=config["patience"], min_value=1, key="eff_patience")
+
+    limit_data = st.number_input("Limit Data (for debugging, 0 for full dataset)", value=0, min_value=0, key="eff_limit")
+
+    st.markdown("---")
+    st.header("3. Start Training")
+
+    if st.button("🚀 Start EfficientNet Training", type="primary", use_container_width=True):
         st.write("Starting EfficientNet training...")
         print("Starting EfficientNet training process...")
 
@@ -192,16 +238,25 @@ if model_type == "efficientnet":
 elif model_type == "yolo":
     from src.yolo_model import YOLODetector, create_yolo_data_yaml
 
+    st.header("2. Configure Training Parameters")
+
     config = YOLO_TRAIN
 
-    learning_rate = st.sidebar.number_input("Learning Rate", value=config["learning_rate"], format="%.6f")
-    epochs = st.sidebar.number_input("Epochs", value=config["epochs"], min_value=1)
-    batch_size = st.sidebar.number_input("Batch Size", value=config["batch_size"], min_value=1)
-    img_size = st.sidebar.number_input("Image Size", value=config["img_size"], min_value=320)
-    patience = st.sidebar.number_input("Early Stopping Patience", value=config["patience"], min_value=1)
-    workers = st.sidebar.number_input("Data Loading Workers", value=NUM_WORKERS, min_value=0)
+    col1, col2 = st.columns(2)
+    with col1:
+        learning_rate = st.number_input("Learning Rate", value=config["learning_rate"], format="%.6f", key="yolo_lr")
+        epochs = st.number_input("Epochs", value=config["epochs"], min_value=1, key="yolo_epochs")
+        batch_size = st.number_input("Batch Size", value=config["batch_size"], min_value=1, key="yolo_batch")
 
-    if st.sidebar.button("Start YOLOv10 Training"):
+    with col2:
+        img_size = st.number_input("Image Size", value=config["img_size"], min_value=320, key="yolo_img_size")
+        patience = st.number_input("Early Stopping Patience", value=config["patience"], min_value=1, key="yolo_patience")
+        workers = st.number_input("Data Loading Workers", value=NUM_WORKERS, min_value=0, key="yolo_workers")
+
+    st.markdown("---")
+    st.header("3. Start Training")
+
+    if st.button("🚀 Start YOLOv10 Training", type="primary", use_container_width=True):
         st.write("Starting YOLOv10 training...")
         print("Starting YOLOv10 training process...")
 

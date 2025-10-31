@@ -4,6 +4,22 @@
 
 ---
 
+## 🚀 Quick Start
+
+```bash
+# 1. Clone the repository
+git clone <your-repo-url>
+cd vn-food-detection
+
+# 2. Run setup (installs all dependencies)
+chmod +x setup.sh
+./setup.sh
+
+# 3. Launch interactive menu
+./menu.sh
+```
+---
+
 ## 📊 Tech Stack
 
 | Component | Technology | Purpose |
@@ -66,10 +82,9 @@
 ## 📁 Project Structure
 
 ```
-food_detection/
+vn-food-detection/
 ├── menu.sh                    # Interactive menu (START HERE!)
 ├── setup.sh                   # One-command installation
-├── YOLO_DATASET.md            # YOLO annotation guide
 ├── requirements.txt           # Dependencies
 │
 ├── src/                       # Source code
@@ -101,8 +116,7 @@ food_detection/
 │   ├── efficientnet_b4_classifier.pth
 │   └── yolov10_detector.pt
 │
-├── results/                   # Evaluation results (auto-created)
-└── logs/                      # Training logs (auto-created)
+└── results/                   # Evaluation results (auto-created)
 ```
 
 ---
@@ -112,10 +126,11 @@ food_detection/
 | Feature | Description |
 |---------|-------------|
 | **Hybrid Detection** | YOLOv10 detects + EfficientNet refines = 97%+ accuracy |
-| **Interactive Menu** | Beautiful CLI interface with model checking |
-| **Auto Model Detection** | Menu recognizes existing models, prevents overwriting |
+| **Dynamic GUI** | Switch models/modes without restarting - all in GUI |
+| **Model Caching** | Instant switching after first load (no reload delays) |
 | **Real-time Training** | Streamlit dashboards with live metrics |
-| **Smart Validation** | Hybrid mode as default for best results |
+| **Adjustable Parameters** | Tune learning rates, thresholds in real-time |
+| **Three Detection Modes** | Hybrid, YOLO-only, or EfficientNet-only |
 | **Nutrition Tracking** | Automatic calculation: `Total = Σ(Count × Nutrients)` |
 | **Multi-Instance** | Detect & count multiple food items per image |
 | **Vietnamese Cuisine** | 30 authentic dishes with variations |
@@ -140,6 +155,15 @@ food_detection/
 - Mixed precision training (AMP)
 - ReduceLROnPlateau scheduler
 - Early stopping
+- Fine-tuning with selective layer unfreezing
+
+**Configurable in GUI:**
+- Learning rate (classifier): default 1e-3
+- Learning rate (backbone): default 1e-5
+- Epochs: default 25
+- Batch size: default 32
+- Unfreeze blocks: 0-7 (0 = classifier only)
+- Early stopping patience: default 5
 
 **Outputs:**
 - Model: `models/efficientnet_b4_classifier.pth`
@@ -155,6 +179,14 @@ food_detection/
 - Batch normalization
 - CSPDarknet backbone
 
+**Configurable in GUI:**
+- Learning rate: default 3e-4
+- Epochs: default 50
+- Batch size: default 16
+- Image size: default 640
+- Early stopping patience: default 10
+- Data loading workers: configurable
+
 **Outputs:**
 - Model: `models/yolov10_detector.pt`
 - Metrics: mAP@0.5, mAP@0.5:0.95, precision, recall
@@ -169,6 +201,10 @@ food_detection/
 4. Compare YOLO vs EfficientNet predictions
 5. Use EfficientNet if confidence > 0.7
 6. Aggregate results & calculate nutrition
+
+**Adjustable in GUI:**
+- Confidence threshold: 0.0 - 1.0 (default 0.5)
+- IoU threshold: 0.0 - 1.0 (default 0.45)
 
 ---
 
@@ -199,8 +235,11 @@ Tracks: Calories, Protein (g), Carbohydrates (g), Fat (g)
 **Classes include:**
 Phở, Bánh mì, Bún bò Huế, Cơm tấm, Bánh xèo, Bánh cuốn, Gỏi cuốn, Nem chua, Bánh bèo, Bánh khọt, and 20 more authentic Vietnamese dishes.
 
+---
+
 ## 📞 Contact
 
 **Email:** phuc.dangcs2007@hcmut.edu.vn
 
 ---
+
