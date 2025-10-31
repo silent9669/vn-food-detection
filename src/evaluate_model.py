@@ -98,10 +98,10 @@ if st.sidebar.button("Run Evaluation"):
             num_classes = len(class_names)
 
             model = load_evaluation_model(model_type, num_classes, model_filepath, device)
-            
+
             if model is None:
                 st.error("EfficientNet model could not be loaded for evaluation.")
-                return
+                st.stop()
 
             all_labels = []
             all_predictions = []

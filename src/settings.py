@@ -60,8 +60,8 @@ VALIDATION = {
 # --- Nutrition Calculation ---
 # This would be loaded from labels.csv, but can have defaults
 NUTRITION_DATA = {
-    "calories": "Calories",
-    "protein": "Protein (g)",
-    "carbs": "Carbohydrates (g)",
-    "fat": "Fat (g)",
+    "calories": "calories",
+    "protein": "protein",
+    "carbs": "carbs",
+    "fat": "fats",
 }
