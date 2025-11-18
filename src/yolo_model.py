@@ -15,16 +15,26 @@ class YOLODetector:
     Handles training, inference, and evaluation for Vietnamese food detection.
     """
 
-    def __init__(self, model_path=None, model_name='yolov10n.pt', device='cuda'):
+    def __init__(self, model_path=None, model_name='yolov10n.pt', device='auto'):
         """
         Initialize YOLO detector.
 
         Args:
             model_path: Path to trained model weights, or None to load pretrained
             model_name: Base YOLO model name (yolov10n, yolov10s, yolov10m, etc.)
-            device: Device to run model on ('cuda' or 'cpu')
+            device: Device to run model on ('auto', 'cuda', 'mps', or 'cpu')
         """
-        self.device = device
+        # Auto-detect device if not specified
+        if device == 'auto':
+            import torch
+            if torch.cuda.is_available():
+                self.device = 'cuda'
+            elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+                self.device = 'mps'
+            else:
+                self.device = 'cpu'
+        else:
+            self.device = device
 
         if model_path and os.path.exists(model_path):
             print(f"Loading trained YOLO model from {model_path}")

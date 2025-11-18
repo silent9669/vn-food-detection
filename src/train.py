@@ -110,7 +110,17 @@ if model_type == "efficientnet":
         st.write(f"Using device: {device}")
         print(f"Using device: {device}")
 
-        scaler = GradScaler()
+        # Mixed precision only supported on CUDA
+        use_amp = (device.type == "cuda")
+        if use_amp:
+            scaler = GradScaler()
+            st.info("✓ Using mixed precision training (AMP)")
+        else:
+            scaler = None
+            if device.type == "mps":
+                st.info("✓ Using Metal GPU acceleration (float32)")
+            else:
+                st.info("Using CPU (float32)")
 
         # Load data
         print("Loading data...")
@@ -173,13 +183,19 @@ if model_type == "efficientnet":
                 inputs, labels = inputs.to(device), labels.to(device)
 
                 optimizer.zero_grad()
-                with autocast():
+                
+                if use_amp:
+                    with autocast():
+                        outputs = model(inputs)
+                        loss = criterion(outputs, labels)
+                    scaler.scale(loss).backward()
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
                     outputs = model(inputs)
                     loss = criterion(outputs, labels)
-
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
+                    loss.backward()
+                    optimizer.step()
 
                 running_loss += loss.item()
 
@@ -199,9 +215,15 @@ if model_type == "efficientnet":
                 for i, data in enumerate(val_loader, 0):
                     inputs, labels = data
                     inputs, labels = inputs.to(device), labels.to(device)
-                    with autocast():
+                    
+                    if use_amp:
+                        with autocast():
+                            outputs = model(inputs)
+                            loss = criterion(outputs, labels)
+                    else:
                         outputs = model(inputs)
                         loss = criterion(outputs, labels)
+                    
                     val_running_loss += loss.item()
 
                     _, predicted = torch.max(outputs.data, 1)

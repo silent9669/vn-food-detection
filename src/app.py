@@ -9,14 +9,16 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 def run_streamlit(script_name):
     """Helper function to run a Streamlit script."""
-    command = ["streamlit", "run", f"src/{script_name}.py"]
+    # Use python3 -m streamlit for better compatibility on macOS
+    python_cmd = sys.executable  # Use the same Python interpreter that's running this script
+    command = [python_cmd, "-m", "streamlit", "run", f"src/{script_name}.py"]
 
     print(f"Running command: {' '.join(command)}")
     try:
         subprocess.run(command, check=True)
     except FileNotFoundError:
-        print(f"Error: 'streamlit' command not found.")
-        print("Please make sure Streamlit is installed and in your PATH.")
+        print(f"Error: Could not run streamlit.")
+        print(f"Please make sure Streamlit is installed: {python_cmd} -m pip install streamlit")
         sys.exit(1)
     except subprocess.CalledProcessError as e:
         print(f"Error running {script_name}.py: {e}")

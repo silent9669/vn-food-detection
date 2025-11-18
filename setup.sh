@@ -19,19 +19,23 @@ echo "║   🍜 Vietnamese Food Detection - Setup Script 🍜             ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}\n"
 
-# Check Python
+# Check Python (try python3 first, then python)
 echo -e "${BOLD}[1/6] Checking Python...${NC}"
-if ! command -v python &> /dev/null; then
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
     echo -e "${RED}✗ Python not found! Please install Python 3.8+${NC}"
     exit 1
 fi
 
-PYTHON_VERSION=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-echo -e "${GREEN}✓ Python $PYTHON_VERSION found${NC}"
+PYTHON_VERSION=$($PYTHON_CMD -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+echo -e "${GREEN}✓ Python $PYTHON_VERSION found (using $PYTHON_CMD)${NC}"
 
 # Check minimum version
-PYTHON_MAJOR=$(python -c 'import sys; print(sys.version_info[0])')
-PYTHON_MINOR=$(python -c 'import sys; print(sys.version_info[1])')
+PYTHON_MAJOR=$($PYTHON_CMD -c 'import sys; print(sys.version_info[0])')
+PYTHON_MINOR=$($PYTHON_CMD -c 'import sys; print(sys.version_info[1])')
 
 if [ "$PYTHON_MAJOR" -lt 3 ] || { [ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -lt 8 ]; }; then
     echo -e "${RED}✗ Python 3.8+ required. Found: $PYTHON_VERSION${NC}"
@@ -41,16 +45,16 @@ echo ""
 
 # Check pip
 echo -e "${BOLD}[2/6] Checking pip...${NC}"
-if ! command -v pip &> /dev/null; then
+if ! $PYTHON_CMD -m pip --version &> /dev/null; then
     echo -e "${YELLOW}⚠ pip not found! Installing...${NC}"
-    python -m ensurepip --upgrade
+    $PYTHON_CMD -m ensurepip --upgrade
 fi
 echo -e "${GREEN}✓ pip found${NC}"
 echo ""
 
 # Upgrade pip
 echo -e "${BOLD}Upgrading pip...${NC}"
-python -m pip install --upgrade pip
+$PYTHON_CMD -m pip install --upgrade pip
 echo ""
 
 # Install requirements
@@ -59,11 +63,11 @@ echo -e "${YELLOW}This may take 5-10 minutes depending on your connection...${NC
 
 if [ -f "requirements.txt" ]; then
     echo "Installing packages from requirements.txt..."
-    pip install -r requirements.txt
+    $PYTHON_CMD -m pip install -r requirements.txt
 
     echo ""
     echo "Installing ultralytics (for YOLOv10)..."
-    pip install ultralytics
+    $PYTHON_CMD -m pip install ultralytics
 
     echo -e "\n${GREEN}✓ All Python packages installed successfully${NC}\n"
 else
@@ -72,28 +76,59 @@ else
     exit 1
 fi
 
-# Verify PyTorch and CUDA
-echo -e "${BOLD}[4/6] Checking PyTorch and GPU...${NC}"
-TORCH_INSTALLED=$(python -c 'import torch; print("True")' 2>/dev/null || echo "False")
+# Verify PyTorch and GPU acceleration
+echo -e "${BOLD}[4/6] Checking PyTorch and GPU acceleration...${NC}"
+TORCH_INSTALLED=$($PYTHON_CMD -c 'import torch; print("True")' 2>/dev/null || echo "False")
 
 if [ "$TORCH_INSTALLED" = "True" ]; then
     echo -e "${GREEN}✓ PyTorch installed${NC}"
+    
+    PYTORCH_VERSION=$($PYTHON_CMD -c 'import torch; print(torch.__version__)' 2>/dev/null)
+    echo -e "  PyTorch version: ${CYAN}$PYTORCH_VERSION${NC}"
 
-    CUDA_AVAILABLE=$(python -c 'import torch; print(torch.cuda.is_available())' 2>/dev/null)
+    # Check for CUDA
+    CUDA_AVAILABLE=$($PYTHON_CMD -c 'import torch; print(torch.cuda.is_available())' 2>/dev/null)
+    
+    # Check for MPS (Apple Silicon)
+    MPS_AVAILABLE=$($PYTHON_CMD -c 'import torch; print(torch.backends.mps.is_available() if hasattr(torch.backends, "mps") else False)' 2>/dev/null)
 
     if [ "$CUDA_AVAILABLE" = "True" ]; then
-        GPU_NAME=$(python -c 'import torch; print(torch.cuda.get_device_name(0))' 2>/dev/null)
-        GPU_COUNT=$(python -c 'import torch; print(torch.cuda.device_count())' 2>/dev/null)
+        GPU_NAME=$($PYTHON_CMD -c 'import torch; print(torch.cuda.get_device_name(0))' 2>/dev/null)
+        GPU_COUNT=$($PYTHON_CMD -c 'import torch; print(torch.cuda.device_count())' 2>/dev/null)
         echo -e "${GREEN}✓ CUDA available${NC}"
         echo -e "  GPU: ${CYAN}$GPU_NAME${NC}"
         echo -e "  GPU Count: ${CYAN}$GPU_COUNT${NC}"
+    elif [ "$MPS_AVAILABLE" = "True" ]; then
+        echo -e "${GREEN}✓ Metal Performance Shaders (MPS) available${NC}"
+        echo -e "  Device: ${CYAN}Apple Silicon GPU${NC}"
+        echo -e "  ${YELLOW}Note: MPS provides GPU acceleration on macOS${NC}"
     else
-        echo -e "${YELLOW}⚠ CUDA not available - training will use CPU (much slower)${NC}"
-        echo -e "${YELLOW}  Consider using a GPU for faster training${NC}"
+        echo -e "${YELLOW}⚠ No GPU acceleration available - training will use CPU (much slower)${NC}"
+        echo -e "${YELLOW}  For faster training:${NC}"
+        echo -e "${YELLOW}  • macOS: Requires Apple Silicon (M1/M2/M3) and PyTorch 1.12+${NC}"
+        echo -e "${YELLOW}  • Linux/Windows: Requires NVIDIA GPU with CUDA support${NC}"
     fi
 else
     echo -e "${RED}✗ PyTorch not installed correctly${NC}"
-    exit 1
+    echo -e "${YELLOW}Attempting to install PyTorch...${NC}"
+    
+    # Detect OS and install appropriate PyTorch version
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo -e "${CYAN}Detected macOS - installing PyTorch with MPS support${NC}"
+        $PYTHON_CMD -m pip install torch torchvision torchaudio
+    else
+        echo -e "${CYAN}Installing PyTorch (CPU version)${NC}"
+        $PYTHON_CMD -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+    fi
+    
+    # Verify installation
+    TORCH_INSTALLED=$($PYTHON_CMD -c 'import torch; print("True")' 2>/dev/null || echo "False")
+    if [ "$TORCH_INSTALLED" = "True" ]; then
+        echo -e "${GREEN}✓ PyTorch installed successfully${NC}"
+    else
+        echo -e "${RED}✗ Failed to install PyTorch${NC}"
+        exit 1
+    fi
 fi
 echo ""
 
@@ -142,7 +177,7 @@ echo -e "${BOLD}Running system verification...${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
 
 if [ -f "src/verify_setup.py" ]; then
-    python src/verify_setup.py
+    $PYTHON_CMD src/verify_setup.py
 else
     echo -e "${YELLOW}⚠ verify_setup.py not found, skipping verification${NC}"
 fi
@@ -166,9 +201,9 @@ echo -e "   • ${GREEN}3${NC} - Launch Evaluation GUI (select model in GUI)"
 echo ""
 
 echo -e "${BOLD}2️⃣  Or use Command Line${NC}"
-echo -e "   ${CYAN}python src/app.py train${NC}      - Open training GUI"
-echo -e "   ${CYAN}python src/app.py validate${NC}   - Open validation GUI"
-echo -e "   ${CYAN}python src/app.py evaluate${NC}   - Open evaluation GUI"
+echo -e "   ${CYAN}$PYTHON_CMD src/app.py train${NC}      - Open training GUI"
+echo -e "   ${CYAN}$PYTHON_CMD src/app.py validate${NC}   - Open validation GUI"
+echo -e "   ${CYAN}$PYTHON_CMD src/app.py evaluate${NC}   - Open evaluation GUI"
 echo ""
 
 echo -e "${BOLD}3️⃣  Prepare Your Data${NC}"
@@ -177,7 +212,7 @@ echo -e "   • Place images in: ${CYAN}data_master/raw_images/${NC}"
 echo -e "   • Update labels in: ${CYAN}data_master/labels.csv${NC}"
 echo ""
 echo -e "   For ${YELLOW}YOLOv10${NC} (detection):"
-echo -e "   • Run: ${CYAN}python src/app.py prepare-dataset yolo${NC}"
+echo -e "   • Run: ${CYAN}$PYTHON_CMD src/app.py prepare-dataset yolo${NC}"
 echo -e "   • Or prepare manually in: ${CYAN}data_master/detection_dataset/${NC}"
 echo ""
 
@@ -189,8 +224,8 @@ echo -e "   • ${GREEN}Three detection modes${NC} - Hybrid, YOLO, EfficientNet"
 echo ""
 
 echo -e "${BOLD}📚 Additional Commands:${NC}"
-echo -e "   ${CYAN}python src/verify_setup.py${NC}   - Check system status"
-echo -e "   ${CYAN}python src/app.py -h${NC}         - Show all CLI options"
+echo -e "   ${CYAN}$PYTHON_CMD src/verify_setup.py${NC}   - Check system status"
+echo -e "   ${CYAN}$PYTHON_CMD src/app.py -h${NC}         - Show all CLI options"
 echo ""
 
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

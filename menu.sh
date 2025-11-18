@@ -72,7 +72,7 @@ launch_training_gui() {
     echo -e "${YELLOW}Opening Streamlit dashboard in your browser...${NC}"
     echo ""
 
-    python src/app.py train
+    python3 src/app.py train
     pause
 }
 
@@ -152,7 +152,7 @@ launch_validation_gui() {
     echo -e "${YELLOW}Opening Streamlit interface in your browser...${NC}"
     echo ""
 
-    python src/app.py validate
+    python3 src/app.py validate
     pause
 }
 
@@ -211,7 +211,7 @@ launch_evaluation_gui() {
     echo -e "${YELLOW}Opening Streamlit evaluation dashboard in your browser...${NC}"
     echo ""
 
-    python src/app.py evaluate
+    python3 src/app.py evaluate
     pause
 }
 
@@ -219,7 +219,7 @@ launch_evaluation_gui() {
 verify_setup() {
     echo -e "\n${CYAN}Verifying System Setup...${NC}"
     echo ""
-    python src/verify_setup.py
+    python3 src/verify_setup.py
     pause
 }
 
@@ -256,8 +256,12 @@ main() {
     done
 }
 
-# Check if Python is available
-if ! command -v python &> /dev/null; then
+# Check if Python is available (try python3 first, then python)
+if command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v python &> /dev/null; then
+    PYTHON_CMD="python"
+else
     echo -e "${RED}Error: Python is not installed or not in PATH${NC}"
     exit 1
 fi

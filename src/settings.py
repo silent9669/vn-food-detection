@@ -2,10 +2,28 @@
 import torch
 import os
 
-# General Settings
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-NUM_WORKERS = 2
-PIN_MEMORY = True
+# General Settings - Cross-platform device detection
+def _get_device():
+    """Detect optimal device: CUDA > MPS > CPU"""
+    if torch.cuda.is_available():
+        return "cuda"
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        return "mps"
+    else:
+        return "cpu"
+
+DEVICE = _get_device()
+
+# Platform-specific optimizations
+if DEVICE == "mps":
+    NUM_WORKERS = 0  # MPS works best with single-threaded data loading
+    PIN_MEMORY = False  # Not beneficial for unified memory
+elif DEVICE == "cuda":
+    NUM_WORKERS = 4  # Can handle more parallel workers
+    PIN_MEMORY = True
+else:  # CPU
+    NUM_WORKERS = 2
+    PIN_MEMORY = False
 
 # Dataset paths
 CLASSIFICATION_DATA_DIR = "data_master/raw_images"

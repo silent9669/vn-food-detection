@@ -67,19 +67,36 @@ def check_imports():
     return all_ok
 
 def check_cuda():
-    """Check CUDA availability."""
-    print_header("Checking CUDA/GPU Support")
+    """Check GPU acceleration availability (CUDA or MPS)."""
+    print_header("Checking GPU Acceleration Support")
     try:
         import torch
+        
+        # Check CUDA
         if torch.cuda.is_available():
             print(f"✅ CUDA available")
             print(f"   GPU Device: {torch.cuda.get_device_name(0)}")
             print(f"   CUDA Version: {torch.version.cuda}")
-        else:
-            print("⚠️  CUDA not available - will use CPU (slower)")
+            print(f"   Device Count: {torch.cuda.device_count()}")
+            return True
+        
+        # Check MPS (Apple Silicon)
+        if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            print(f"✅ Metal Performance Shaders (MPS) available")
+            print(f"   Device: Apple Silicon GPU")
+            print(f"   PyTorch Version: {torch.__version__}")
+            print(f"   Note: MPS provides GPU acceleration on macOS")
+            return True
+        
+        # No GPU acceleration
+        print("⚠️  No GPU acceleration available - will use CPU (slower)")
+        print("   For faster training:")
+        print("   • macOS: Requires Apple Silicon (M1/M2/M3) and PyTorch 1.12+")
+        print("   • Linux/Windows: Requires NVIDIA GPU with CUDA support")
         return True
+        
     except Exception as e:
-        print(f"❌ Error checking CUDA: {e}")
+        print(f"❌ Error checking GPU: {e}")
         return False
 
 def check_project_structure():
