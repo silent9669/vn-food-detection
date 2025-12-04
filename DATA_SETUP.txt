@@ -40,5 +40,11 @@ To Re-create Symlink (if needed):
   rm -rf data_master/raw_images
   ln -s ~/Documents/food_data data_master/raw_images
 
-Note: The symlink is ignored by git, so you'll need to recreate it
-      if you clone the repo on a different machine.
+IMPORTANT NOTES:
+  1. The symlink is ignored by git (via .gitignore)
+  2. When you switch branches, the symlink may be removed
+  3. After switching back to training branch, recreate the symlink:
+     ln -s ~/Documents/food_data data_master/raw_images
+  4. If you clone the repo on a different machine, you'll need to:
+     - Copy your food_data folder to ~/Documents/
+     - Create the symlink as shown above
