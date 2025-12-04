@@ -1,0 +1,44 @@
+Vietnamese Food Detection - Data Setup
+======================================
+
+External Data Location:
+  ~/Documents/food_data/
+
+Symlink Configuration:
+  data_master/raw_images -> ~/Documents/food_data
+
+This setup allows you to:
+  ✓ Keep training data outside the git repository
+  ✓ Switch branches without losing data
+  ✓ Share data across multiple projects
+  ✓ Avoid accidentally committing large image files
+
+Data Structure:
+  ~/Documents/food_data/
+    ├── Banh_beo/
+    ├── Banh_bot_loc/
+    ├── Banh_can/
+    ├── ... (30 food classes total)
+    └── Xoi_xeo/
+
+Training Branch Access:
+  data_master/raw_images/ -> Points to ~/Documents/food_data/
+  data_master/labels.csv  -> Tracked in git
+
+How It Works:
+  1. Your images are stored in ~/Documents/food_data/
+  2. A symlink in data_master/raw_images points to that folder
+  3. Training scripts read from data_master/raw_images as usual
+  4. Git ignores the symlink (via .gitignore)
+  5. Data persists when switching branches
+
+To Verify Setup:
+  ls -la data_master/
+  ls data_master/raw_images/
+
+To Re-create Symlink (if needed):
+  rm -rf data_master/raw_images
+  ln -s ~/Documents/food_data data_master/raw_images
+
+Note: The symlink is ignored by git, so you'll need to recreate it
+      if you clone the repo on a different machine.
