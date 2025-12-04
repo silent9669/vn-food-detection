@@ -1,23 +1,48 @@
-# 🍜 Hybrid Vietnamese Food Detection System
+# 🍜 Vietnamese Food Detection Project
 
-> Combining YOLOv10 + EfficientNet_B4 for 97%+ accuracy in Vietnamese food recognition with automatic nutrition calculation
+> AI-powered Vietnamese food detection with mobile app and ML training pipeline
+
+---
+
+## 📱 Project Branches
+
+This project is organized into two main branches:
+
+### 🎯 **mobile-app** Branch
+Complete React Native mobile application with backend API
+- Cross-platform app (iOS & Android)
+- AI-powered food detection
+- Nutritional information
+- Share functionality
+- **[View Mobile App →](https://github.com/silent9669/vn-food-detection/tree/mobile-app)**
+
+### 🧠 **training** Branch  
+Machine learning training pipeline and models
+- YOLOv10 + EfficientNet_B4 hybrid system
+- 30 Vietnamese food classes
+- Training dashboards and tools
+- **[View Training Code →](https://github.com/silent9669/vn-food-detection/tree/training)**
 
 ---
 
 ## 🚀 Quick Start
 
+### For Mobile App Development
 ```bash
-# 1. Clone the repository
-git clone <your-repo-url>
+git clone -b mobile-app https://github.com/silent9669/vn-food-detection.git
 cd vn-food-detection
+# Follow mobile-app/README.md
+```
 
-# 2. Run setup (installs all dependencies)
+### For ML Training
+```bash
+git clone -b training https://github.com/silent9669/vn-food-detection.git
+cd vn-food-detection
 chmod +x setup.sh
 ./setup.sh
-
-# 3. Launch interactive menu
 ./menu.sh
 ```
+
 ---
 
 ## 📊 Tech Stack
