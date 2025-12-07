@@ -143,27 +143,6 @@ sequenceDiagram
 | **Rolls** | Gỏi cuốn, Nem chua |
 | **Others** | 20+ more dishes |
 
-## 📈 Project Status
-
-```mermaid
-pie title Development Progress
-    "Complete" : 88
-    "Remaining" : 12
-```
-
-**Completed (36/41 tasks):**
-- ✅ Mobile app development
-- ✅ Backend API with ML model
-- ✅ Platform-specific UI
-- ✅ Railway deployment ready
-- ✅ Testing & documentation
-
-**Remaining (5 tasks):**
-- 🔄 Railway deployment
-- 🔄 Android release build
-- 🔄 iOS release build
-- 🔄 App store listings
-- 🔄 Final testing
 
 ## 🔗 Links
 
